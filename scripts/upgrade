@@ -50,9 +50,10 @@ PULLCOMMANDS
 
 # Switch branch to tagged release
 cd $final_path/live
+version=$(curl -s https://api.github.com/repos/tootsuite/mastodon/releases/latest | grep tag_name | cut -d\" -f4)
 sudo su - $app <<SWITCHCOMMANDS
 pushd ~/live
-git checkout $(git tag -l | sort -V | tail -n 1)
+git checkout $version
 SWITCHCOMMANDS
 
 # upgrade Node.js v4 to v6
@@ -64,7 +65,7 @@ if [[ $node_version =~ ^v4.*$  ]]; then
 fi
 
 # add additional package for upgrade
-ynh_package_install pkg-config libprotobuf-dev protobuf-compiler libicu-dev libidn11-dev postgresql-server-dev-9.4
+ynh_package_install yarn pkg-config libprotobuf-dev protobuf-compiler libicu-dev libidn11-dev postgresql-server-dev-9.4
 
 # Install ruby 2.5.1 for release 2.4.0
 sudo su - $app <<RCOMMANDS
@@ -83,18 +84,24 @@ sudo su - $app <<MCOMMANDS
 pushd ~/live
 $final_path/.rbenv/versions/2.5.1/bin/gem install bundler
 $final_path/.rbenv/versions/2.5.1/bin/bundle install --deployment --without development test
-yarn install --pure-lockfile
+#yarn install --pure-lockfile
 MCOMMANDS
 
+pushd $final_path/live
+yarn install --pure-lockfile
+popd
+
 # Apply Mastodon upgrade
-sudo su - $app <<COMMANDS
+pushd $final_path/live
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails assets:clean
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails assets:precompile --trace
+
+sudo su - $app <<UCOMMANDS
 pushd ~/live
-RAILS_ENV=production bundle exec rails assets:clean
-RAILS_ENV=production bundle exec rails assets:precompile --trace
-RAILS_ENV=production bundle exec rails db:migrate
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails db:migrate
 # Upgrade to 2.2.0
-RAILS_ENV=production bundle exec rails mastodon:maintenance:remove_regeneration_markers
-COMMANDS
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails mastodon:maintenance:remove_regeneration_markers
+UCOMMANDS
 
 # Restart Mastodon
 sudo systemctl start mastodon-*.service
