@@ -128,27 +128,27 @@ cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
 ynh_setup_source "$final_path/.rbenv"                    "app-rbenv"
 ynh_setup_source "$final_path/.rbenv/plugins/ruby-build" "app-ruby-build"
 
-# Install ruby 2.5.1
+# Install ruby 2.5.3
 (
-	exec_as "$app" $final_path/.rbenv/bin/rbenv install -s 2.5.1 || true
-	exec_as "$app" $final_path/.rbenv/bin/rbenv global 2.5.1 || true
-	exec_as "$app" $final_path/.rbenv/versions/2.5.1/bin/ruby -v
+	exec_as "$app" $final_path/.rbenv/bin/rbenv install -s 2.5.3 || true
+	exec_as "$app" $final_path/.rbenv/bin/rbenv global 2.5.3 || true
+	exec_as "$app" $final_path/.rbenv/versions/2.5.3/bin/ruby -v
 )
 
 # Create symlink for ruby
 rm /usr/bin/ruby || true
-ln -s $final_path/.rbenv/versions/2.5.1/bin/ruby /usr/bin/ruby || true
+ln -s $final_path/.rbenv/versions/2.5.3/bin/ruby /usr/bin/ruby || true
 
 # Preconfig CSS & JS
 # Install Mastodon
 (
 sudo su - $app <<MCOMMANDS
 pushd ~/live
-$final_path/.rbenv/versions/2.5.1/bin/gem install bundler
+$final_path/.rbenv/versions/2.5.3/bin/gem install bundler
 if [ "$(lsb_release --codename --short)" == "jessie" ]; then
-	$final_path/.rbenv/versions/2.5.1/bin/bundle install --deployment --without development test
+	$final_path/.rbenv/versions/2.5.3/bin/bundle install --deployment --without development test
 else
-	$final_path/.rbenv/versions/2.5.1/bin/bundle install --deployment --force --without development test
+	$final_path/.rbenv/versions/2.5.3/bin/bundle install --deployment --force --without development test
 fi
 yarn install --pure-lockfile
 MCOMMANDS
@@ -163,13 +163,13 @@ popd
 # Apply Mastodon upgrade
 (
 pushd $final_path/live
-RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails assets:clean
-RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails assets:precompile
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.3/bin/bundle exec rails assets:clean
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.3/bin/bundle exec rails assets:precompile
 popd
 
 sudo su - $app <<COMMANDS
 pushd ~/live
-SKIP_POST_DEPLOYMENT_MIGRATIONS=true RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails db:migrate
+SKIP_POST_DEPLOYMENT_MIGRATIONS=true RAILS_ENV=production $final_path/.rbenv/versions/2.5.3/bin/bundle exec rails db:migrate
 COMMANDS
 )
 #=================================================
@@ -191,7 +191,7 @@ sleep 30
 
 sudo su - $app <<COMMANDS
 pushd ~/live
-RAILS_ENV=production $final_path/.rbenv/versions/2.5.1/bin/bundle exec rails db:migrate
+RAILS_ENV=production $final_path/.rbenv/versions/2.5.3/bin/bundle exec rails db:migrate
 COMMANDS
 
 #=================================================
